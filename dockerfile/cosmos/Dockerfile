@@ -114,6 +114,9 @@ RUN addgroup --gid 1025 -S heighliner && adduser --uid 1025 -S heighliner -G hei
 # Use ln and rm from full featured busybox for assembling final image
 FROM busybox:1.34.1-musl AS busybox-full
 
+# Use alpine to source the latest CA certificates
+FROM alpine:3 as alpine-3
+
 # Build final image from scratch
 FROM scratch
 
@@ -168,11 +171,12 @@ COPY --from=build-env /root/bin /bin
 COPY --from=build-env /root/lib /lib
 
 # Install trusted CA certificates
-COPY --from=infra-toolkit /etc/ssl/cert.pem /etc/ssl/cert.pem
+COPY --from=alpine-3 /etc/ssl/cert.pem /etc/ssl/cert.pem
 
 # Install heighliner user
 COPY --from=infra-toolkit /etc/passwd /etc/passwd
 COPY --from=infra-toolkit --chown=1025:1025 /home/heighliner /home/heighliner
+COPY --from=infra-toolkit --chown=1025:1025 /tmp /tmp
 
 WORKDIR /home/heighliner
 USER heighliner
